@@ -1,0 +1,165 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    color: white;
+}
+body{
+    width: 100%;
+    height: 100vh;
+}
+.chat-container{
+    width: 100%;
+    height: 80%;
+    background-color: black;
+    overflow: auto;
+}
+.user-chat{
+    width: 100%;
+   
+}
+.ai-chat{
+    width: 100%;
+    
+}
+.user-chat{
+    width: 100%;
+    padding: 20px;
+    background-color: black;
+    position: relative;
+    margin-top: 20px;
+        
+}
+.user-input{
+    padding-left: 5%;
+}
+.ai-chat{
+    width: 100%;
+    padding: 20px;
+    margin-top: 20px;
+    background-color: black;
+    position: relative;
+    text-align: justify;   
+}
+.chat-output{
+    padding-left: 5%;
+
+}
+#user-img{
+    position: absolute;
+}
+#aiprofile{
+    position: absolute;
+}
+.input-area{
+    width: 100%;
+    height: 20%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px; 
+    background-color: black;
+}
+#inputbox{
+    width: 50%;
+    border-radius: 20px;
+    border: 0px;
+    height: 40px;
+    padding: 10px;
+    color: black;
+    
+}
+#inputbox::placeholder{
+    padding: 20px;
+}
+#submit{
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+}
+.load{
+    background-size: contain;
+    background: transparent;
+}
+button{
+    all: unset;
+    background-color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+}
+button i{
+    color: black;
+}
+button:hover{
+    background-color: grey;
+}
+
+.chat-before{
+    display: block;
+    text-align: center;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%,50%);
+}
+
+
+@media(max-width:768px)
+{
+    body{
+        width: 100%;
+        height: 100dvh;
+    }
+    #user-img, #aiprofile{
+        display: none;
+    }
+
+    .user-chat{
+        width: 85%;
+        padding: 20px;
+        background-color: rgb(12, 12, 12);
+        position: relative;
+        margin-top: 20px;
+        left: calc(15% - 10px);
+        text-align: right;   
+        border-top-left-radius: 20px;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
+    }
+    .ai-chat{
+        width: 85%;
+        padding: 20px;
+        margin-top: 20px;
+        /* background-color: rgb(26, 25, 25); */
+        position: relative;
+        text-align: justify; 
+        border: 2px solid rgb(17, 16, 16);  
+        border-top-right-radius: 20px;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
+        left: 10px;
+    }
+    .chat-before{
+        display: block;
+        text-align: center;
+        position: absolute;
+        top: 30%;
+        left: 50%;
+        transform: translate(-50%,50%);
+    }
+
+}
+@media(max-height:580px){
+    .chat-before{
+        position: absolute;
+        top: 10%;
+        /* background-color: gold; */
+        /* align-items: center; */
+    }
+}
+
+
+ /* Author-> Ami Kanwar   
+ github-> @Dev-Kanwar  */
