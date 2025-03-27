@@ -1,6 +1,6 @@
 Hello Devs,
 
-I am Kanwar. This is the showcase of my project Chanakya ai Chatbot.
+I am Armaan Rana. This is the showcase of my project Chanakya ai Chatbot.
 
 In this project I have used Html, CSS and JS. In this project I have fetched the API of Google's Gemini AI model.
 
@@ -12,4 +12,4 @@ But I recommend not to use this for your Placement Purpose, instead work on your
 
 
 
-~ @Dev-Kanwar
+~ @ARMAANRANA006
