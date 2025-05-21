@@ -43,7 +43,7 @@ function creatchat(html,classes){
 
 function chatprocess(message){
     user.data=message;
-    let html=`<img src="images/user-logo.png" alt="user image" id="user-img" width="50">
+    let html=`<img src="user-logo.png" alt="user image" id="user-img" width="50">
     <div class="user-input">
         ${user.data}
     </div>`
@@ -52,9 +52,9 @@ function chatprocess(message){
     chatcontainer.appendChild(createchatbox);
 
     setTimeout(()=>{
-        let html=`<img src="images/chanak-logo.png" id="aiprofile" alt="Chankya" width="50">
+        let html=`<img src="chanak-logo.png" id="aiprofile" alt="Chankya" width="50">
         <div class="chat-output">
-        <img src="images/UDui.gif" class="load" alt="loading" width="80px" height="30px">
+        <img src="UDui.gif" class="load" alt="loading" width="80px" height="30px">
         </div>`
         let aichatbox=creatchat(html,"ai-chat");
         chatcontainer.appendChild(aichatbox);
@@ -87,5 +87,4 @@ btn.addEventListener("click",(e)=>{
 
 
 
-//  Author-> Ami Kanwar   
-//  github-> @Dev-Kanwar 
+
