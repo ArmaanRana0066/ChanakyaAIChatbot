@@ -3,7 +3,7 @@ let chatcontainer=document.querySelector(".chat-container");
 let btn=document.querySelector("#submit");
 let contbefore=document.querySelector(".chat-before");
 
-const url="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyCEINaGc3KsQ-kQlsMK7W7Ae8qATbbM8FQ"
+const url="https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyDS2ct1NLVlSwN3nMcfqHbDAztvpM9v9Qk"
 
 let user={
     data:null,
