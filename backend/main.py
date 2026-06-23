@@ -18,7 +18,6 @@ import json
 import time
 from collections import defaultdict, deque
 
-import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import StreamingResponse, FileResponse
@@ -26,6 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .rag import retrieve, STORE
+from .providers import stream_with_fallback, active_provider_names
 
 # Sentinels: the stream sends retrieved sources (JSON) first, then the answer text.
 SOURCES_START = "§§SOURCES§§"
@@ -118,69 +118,12 @@ def _grounding_block(sources: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _build_gemini_payload(messages: list[Message], sources: list[dict]) -> dict:
-    """Convert our message list into Gemini's request body, trimming to recent turns."""
-    trimmed = messages[-MAX_HISTORY_MESSAGES:]
-    contents = []
-    for m in trimmed:
-        role = "model" if m.role == "model" else "user"
-        text = (m.text or "").strip()
-        if not text:
-            continue
-        contents.append({"role": role, "parts": [{"text": text}]})
-    system_text = SYSTEM_PROMPT + _grounding_block(sources)
-    return {
-        "system_instruction": {"parts": [{"text": system_text}]},
-        "contents": contents,
-        "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 2048,
-            # gemini-2.5-flash is a "thinking" model; without this it spends the whole
-            # token budget reasoning and truncates the actual answer. Off = fast chat.
-            "thinkingConfig": {"thinkingBudget": 0},
-        },
-    }
-
-
-async def _stream_gemini(payload: dict):
-    """Call Gemini's SSE streaming endpoint and yield plain text deltas to the client."""
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{GEMINI_MODEL}:streamGenerateContent?alt=sse&key={GEMINI_API_KEY}"
-    )
-    headers = {"Content-Type": "application/json"}
-    try:
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            async with client.stream("POST", url, headers=headers, json=payload) as resp:
-                if resp.status_code != 200:
-                    body = (await resp.aread()).decode("utf-8", "ignore")
-                    yield f"[error] Gemini API returned {resp.status_code}. {body[:300]}"
-                    return
-                async for line in resp.aiter_lines():
-                    if not line or not line.startswith("data:"):
-                        continue
-                    data = line[len("data:"):].strip()
-                    if data == "[DONE]":
-                        break
-                    try:
-                        obj = json.loads(data)
-                        parts = obj["candidates"][0]["content"]["parts"]
-                        for p in parts:
-                            if "text" in p:
-                                yield p["text"]
-                    except (KeyError, IndexError, json.JSONDecodeError):
-                        # Skip keep-alive / non-text chunks.
-                        continue
-    except httpx.RequestError as e:
-        yield f"[error] Could not reach the model: {e}. Internet/API key theek hai?"
-
-
 @app.post("/api/chat")
 async def chat(req: ChatRequest, request: Request):
-    if not GEMINI_API_KEY:
+    if not active_provider_names():
         raise HTTPException(
             status_code=500,
-            detail="GEMINI_API_KEY is not set on the server. Copy .env.example to .env and add your key.",
+            detail="No AI provider keys set. Copy .env.example to .env and add at least GEMINI_API_KEY.",
         )
     # Behind a host's proxy (Render/HF), the real client IP is in X-Forwarded-For.
     fwd = request.headers.get("x-forwarded-for", "")
@@ -189,15 +132,19 @@ async def chat(req: ChatRequest, request: Request):
     if not req.messages:
         raise HTTPException(status_code=400, detail="No messages provided.")
 
-    # Retrieve relevant verses for the latest user turn (RAG grounding).
+    # Retrieve relevant verses for the latest user turn (RAG grounding). Query embedding
+    # uses Gemini; if its quota is gone, retrieval returns [] and we still answer (via a
+    # fallback provider) — just without citations that round.
     last_user = next((m.text for m in reversed(req.messages) if m.role == "user"), "")
-    sources = await retrieve(last_user, GEMINI_API_KEY, k=4) if last_user else []
-    payload = _build_gemini_payload(req.messages, sources)
+    sources = await retrieve(last_user, GEMINI_API_KEY, k=4) if (last_user and GEMINI_API_KEY) else []
+
+    system_text = SYSTEM_PROMPT + _grounding_block(sources)
+    history = [{"role": m.role, "text": m.text} for m in req.messages[-MAX_HISTORY_MESSAGES:]]
 
     async def generate():
         # Send sources first (frontend renders them as a citation panel), then the answer.
         yield SOURCES_START + json.dumps(sources, ensure_ascii=False) + SOURCES_END
-        async for delta in _stream_gemini(payload):
+        async for delta in stream_with_fallback(system_text, history):
             yield delta
 
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
@@ -207,8 +154,7 @@ async def chat(req: ChatRequest, request: Request):
 def health():
     return {
         "ok": True,
-        "model": GEMINI_MODEL,
-        "key_loaded": bool(GEMINI_API_KEY),
+        "providers": active_provider_names(),   # fallback chain, in order
         "rag_available": STORE.available,
         "corpus_size": len(STORE.items) if STORE.available else 0,
     }

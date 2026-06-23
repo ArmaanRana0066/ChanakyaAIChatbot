@@ -28,6 +28,9 @@ with advice grounded in real classical texts and **verse-level citations** (RAG)
   stored locally (`corpus/embeddings.json`); cosine top-k retrieval grounds every answer so
   it cites the exact chapter/verse instead of fabricating quotes.
 - **Model:** Google Gemini (`gemini-2.5-flash`, thinking disabled for fast chat).
+- **Multi-provider failover:** when one provider's free quota is exhausted (HTTP 429), the
+  server auto-switches to the next in the chain — Gemini → Groq → OpenRouter → Mistral —
+  **without losing conversation context**. Only providers whose key is set are used.
 
 ## Run locally
 ```bash

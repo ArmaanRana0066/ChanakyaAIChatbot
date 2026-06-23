@@ -27,7 +27,9 @@ added a backend proxy with rate limiting and spend controls."*
 - [x] Markdown rendering (marked) + sanitization (DOMPurify, anti-XSS).
 - [x] Chat history persisted to localStorage + "new chat" button.
 - [x] Real error handling + per-IP rate limiting.
-- [ ] **Deploy** (Render / Railway / HF Spaces) → get a live demo URL for the resume.
+- [x] **Multi-provider failover** (`backend/providers.py`): Gemini → Groq → OpenRouter →
+      Mistral; auto-switch on quota/429, conversation context preserved. Keys optional.
+- [ ] **Deploy** (Hugging Face Spaces — free, no card) → get a live demo URL for the resume.
 
 **Resume line:** *"Built a streaming chat app with conversation memory, markdown rendering,
 and client/server separation (Python FastAPI + vanilla JS)."*
