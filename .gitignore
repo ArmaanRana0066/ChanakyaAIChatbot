@@ -1,0 +1,24 @@
+# Secrets — NEVER commit these
+.env
+.env.local
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Node (if you add it later)
+node_modules/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Corpus build artifacts / vector store dumps (keep source JSON, ignore big binaries)
+*.faiss
+embeddings_cache/

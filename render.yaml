@@ -1,0 +1,16 @@
+# One-click deploy config for Render (https://render.com) — free tier, no credit card.
+# After connecting this repo, set GEMINI_API_KEY in the dashboard (it is a secret, not in git).
+services:
+  - type: web
+    name: chanakya-ai
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false            # set this in the Render dashboard (secret)
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: RATE_LIMIT_PER_MIN
+        value: "20"
