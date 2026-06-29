@@ -67,29 +67,31 @@ STORE = VectorStore()
 
 
 async def _embed_query(text: str, api_key: str) -> np.ndarray | None:
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{EMBED_MODEL}:embedContent?key={api_key}"
-    )
+    # api_key may be a comma-separated list of Gemini keys; try each until one works,
+    # so a dead/exhausted embedding key rolls over to the next (same as generation).
+    keys = [k.strip() for k in (api_key or "").split(",") if k.strip()]
     body = {
         "model": f"models/{EMBED_MODEL}",
         "content": {"parts": [{"text": text}]},
         "taskType": "RETRIEVAL_QUERY",
         "outputDimensionality": STORE.dim or 768,
     }
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(url, json=body, headers={"Content-Type": "application/json"})
-            if resp.status_code != 200:
-                return None
-            vals = resp.json().get("embedding", {}).get("values")
-            if not vals:
-                return None
-            v = np.array(vals, dtype=np.float32)
-            n = np.linalg.norm(v)
-            return v / n if n else v
-    except httpx.RequestError:
-        return None
+    for key in keys:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{EMBED_MODEL}:embedContent?key={key}"
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                resp = await client.post(url, json=body, headers={"Content-Type": "application/json"})
+                if resp.status_code != 200:
+                    continue  # try the next key
+                vals = resp.json().get("embedding", {}).get("values")
+                if not vals:
+                    continue
+                v = np.array(vals, dtype=np.float32)
+                n = np.linalg.norm(v)
+                return v / n if n else v
+        except httpx.RequestError:
+            continue
+    return None
 
 
 async def retrieve(query: str, api_key: str, k: int = 4, min_score: float = 0.35) -> list[dict]:

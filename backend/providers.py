@@ -32,41 +32,51 @@ class ProviderUnavailable(Exception):
     """Raised when a provider is rate-limited or errors before streaming starts."""
 
 
+def keys_for(env_name: str) -> list[str]:
+    """Each provider env var may hold MULTIPLE comma-separated keys (backups).
+    e.g. GROQ_API_KEY="key1,key2" -> if key1 is dead/rate-limited, key2 is tried next."""
+    return [k.strip() for k in os.getenv(env_name, "").split(",") if k.strip()]
+
+
 def build_chain() -> list[dict]:
     """Build the ordered provider chain from whatever keys are present (read fresh each call).
 
     Priority: Groq first (fast + generous free tier), then Gemini as fallback, then the rest.
+    Multiple keys per provider are supported — they become separate links in the chain, so a
+    dead/exhausted key automatically rolls over to the next one (conversation context is kept).
     """
     chain: list[dict] = []
 
-    groq = os.getenv("GROQ_API_KEY", "").strip()
-    if groq:
+    def tag(i: int) -> str:
+        return f"#{i + 1}" if i else ""
+
+    # Groq (primary) — may have several keys
+    for i, k in enumerate(keys_for("GROQ_API_KEY")):
         chain.append({
-            "name": "groq", "type": "openai", "key": groq,
+            "name": f"groq{tag(i)}", "type": "openai", "key": k,
             "base_url": "https://api.groq.com/openai/v1",
             "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
         })
 
-    gem = os.getenv("GEMINI_API_KEY", "").strip()
-    if gem:
-        primary = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
-        chain.append({"name": f"gemini:{primary}", "type": "gemini", "key": gem, "model": primary})
-        # A second Gemini model (separate daily quota) before leaving the provider.
+    # Gemini (fallback) — each key gets the primary model then 2.0-flash (separate quota)
+    primary = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+    for i, k in enumerate(keys_for("GEMINI_API_KEY")):
+        chain.append({"name": f"gemini:{primary}{tag(i)}", "type": "gemini", "key": k, "model": primary})
         if "2.0-flash" not in primary:
-            chain.append({"name": "gemini:2.0-flash", "type": "gemini", "key": gem, "model": "gemini-2.0-flash"})
+            chain.append({"name": f"gemini:2.0-flash{tag(i)}", "type": "gemini", "key": k, "model": "gemini-2.0-flash"})
 
-    oro = os.getenv("OPENROUTER_API_KEY", "").strip()
-    if oro:
+    # OpenRouter
+    for i, k in enumerate(keys_for("OPENROUTER_API_KEY")):
         chain.append({
-            "name": "openrouter", "type": "openai", "key": oro,
+            "name": f"openrouter{tag(i)}", "type": "openai", "key": k,
             "base_url": "https://openrouter.ai/api/v1",
             "model": os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"),
         })
 
-    mistral = os.getenv("MISTRAL_API_KEY", "").strip()
-    if mistral:
+    # Mistral
+    for i, k in enumerate(keys_for("MISTRAL_API_KEY")):
         chain.append({
-            "name": "mistral", "type": "openai", "key": mistral,
+            "name": f"mistral{tag(i)}", "type": "openai", "key": k,
             "base_url": "https://api.mistral.ai/v1",
             "model": os.getenv("MISTRAL_MODEL", "mistral-small-latest"),
         })
