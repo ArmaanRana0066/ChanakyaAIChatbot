@@ -13,6 +13,9 @@ license: mit
 
 **Your AI strategy mentor — grounded in the Arthashastra and Chanakya Niti.**
 
+🔗 **Live demo:** https://armaan006-chanakya-ai.hf.space
+&nbsp;·&nbsp; 💻 **Code:** https://github.com/ArmaanRana0066/ChanakyaAIChatbot
+
 Not a "talk to god" bot. Acharya Chanakya was a human teacher, strategist and economist, so
 this is a *secular mentor* for career, negotiation, money, leadership and decision-making —
 with advice grounded in real classical texts and **verse-level citations** (RAG).
