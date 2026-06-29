@@ -70,7 +70,7 @@ def build_chain() -> list[dict]:
         chain.append({
             "name": f"openrouter{tag(i)}", "type": "openai", "key": k,
             "base_url": "https://openrouter.ai/api/v1",
-            "model": os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free"),
+            "model": os.getenv("OPENROUTER_MODEL", "google/gemma-4-31b-it:free"),
         })
 
     # Mistral
