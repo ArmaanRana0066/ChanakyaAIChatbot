@@ -1,5 +1,5 @@
 <!--
- Author-> Armaan Rana   
+ Author-> Armaan Rana
  github-> @ArmaanRana0066
  -->
 <!DOCTYPE html>
@@ -7,35 +7,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chanakya</title>
+    <title>Chanakya AI — strategy mentor grounded in the Arthashastra</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="icon" type="image/png" href="favicon/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="favicon/favicon.svg" />
-    <link rel="shortcut icon" href="favicon/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png" />
-    <link rel="manifest" href="favicon/site.webmanifest" />
-    
+    <link rel="icon" href="chanak-logo.png">
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-before">
-            <h1>अनभ्यासे विषं शास्त्रम्।</h1>
+    <header class="topbar">
+        <div class="brand">
+            <img src="chanak-logo.png" alt="Chanakya" class="brand-logo">
+            <div class="brand-text">
+                <span class="brand-name">Chanakya AI</span>
+                <span class="brand-tag">Arthashastra-grounded strategy mentor</span>
+            </div>
         </div>
+        <button id="newchat" title="Start a new conversation"><span class="ic">+</span><span>New</span></button>
+    </header>
+
+    <main class="chat-container" id="chat">
+        <div class="chat-before">
+            <img src="chanak-logo.png" alt="Chanakya" class="welcome-logo">
+            <h1 class="shloka" title="Knowledge without practice is poison — Chanakya Niti 4.15">अनभ्यासे विषं शास्त्रम्।</h1>
+            <p class="shloka-meaning">“Knowledge without practice is poison.” — <em>Chanakya Niti 4.15</em></p>
+            <p class="welcome-sub">Counsel on strategy, negotiation, money and life — grounded in the real Chanakya Niti, with verse citations.</p>
+            <div class="chips">
+                <button class="chip">How should I handle a betrayal?</button>
+                <button class="chip">How do I choose whom to trust?</button>
+                <button class="chip">Advice on saving money</button>
+                <button class="chip">How to negotiate a raise?</button>
+            </div>
+        </div>
+    </main>
+
+    <div class="composer">
+        <div class="modes">
+            <button class="mode active" data-mode="ask">💬 Ask</button>
+            <button class="mode" data-mode="verify">🔍 Verify a quote</button>
+        </div>
+        <div class="input-area">
+            <input type="text" id="inputbox" placeholder="प्रश्न पूछें — ask Chanakya anything…" autocomplete="off">
+            <button id="submit" title="Send">↑</button>
+        </div>
+        <p class="disclaimer">Interpretation of a ~2,300-year-old text for guidance — not scripture or professional advice.</p>
     </div>
-    <div class="input-area">
-        <button id="newchat" title="नई बातचीत"><i class="fa-solid fa-plus"></i></button>
-        <input type="text" id="inputbox" placeholder="प्रश्न पूछें">
-        <button id="submit"><i class="fa-solid fa-arrow-up"></i></button>
-    </div>
-    <!-- Markdown rendering + sanitization (replaces plain innerText output) -->
+
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
     <script src="script.js"></script>
-    <script>
-        document.addEventListener("contextmenu",(e)=>{
-            e.preventDefault();
-        })
-    </script>
 </body>
 </html>

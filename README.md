@@ -22,18 +22,38 @@ with advice grounded in real classical texts and **verse-level citations** (RAG)
 
 > अनभ्यासे विषं शास्त्रम् — *"Knowledge without practice is poison."* (Chanakya Niti 4.15)
 
+## Features
+- **Ask mode** — chat with the Acharya; every answer cites the exact Chanakya Niti chapter
+  & verse, shown in a "sources from the Shastra" panel with the original **Devanagari + IAST
+  transliteration** (where available).
+- **Quote Myth-Buster** — paste a viral "Chanakya quote"; it checks against the real corpus and
+  labels it **AUTHENTIC / PARAPHRASED / NOT FOUND** with the closest real verse. (So much
+  "Chanakya" content online is fake — this catches it.)
+- **Multi-provider failover** — when one provider's free quota is exhausted (HTTP 429) the
+  server auto-switches to the next — **Groq → Gemini → OpenRouter → Mistral** — *without losing
+  conversation context*. Only providers whose key is set are used.
+
 ## Stack
 - **Frontend:** vanilla HTML / CSS / JS, streaming UI, markdown rendering (marked + DOMPurify),
-  collapsible "sources from the Shastra" citation panel.
-- **Backend:** Python **FastAPI** proxy that holds the Gemini API key server-side, adds
-  conversation memory, streaming, rate limiting, the Chanakya persona, and RAG retrieval.
-- **RAG:** 319-verse Chanakya Niti corpus embedded with `gemini-embedding-001` (768-dim),
-  stored locally (`corpus/embeddings.json`); cosine top-k retrieval grounds every answer so
-  it cites the exact chapter/verse instead of fabricating quotes.
-- **Model:** Google Gemini (`gemini-2.5-flash`, thinking disabled for fast chat).
-- **Multi-provider failover:** when one provider's free quota is exhausted (HTTP 429), the
-  server auto-switches to the next in the chain — Gemini → Groq → OpenRouter → Mistral —
-  **without losing conversation context**. Only providers whose key is set are used.
+  mode toggle, citation panel. No external CDNs required.
+- **Backend:** Python **FastAPI** proxy holding keys server-side; conversation memory, streaming,
+  per-IP rate limiting, the Chanakya (Acharya, non-deity) persona, RAG retrieval + the verifier.
+- **RAG:** Chanakya Niti corpus (319 verses) embedded with `gemini-embedding-001` (768-dim) into
+  a local cosine vector store (`corpus/embeddings.json`); 120 verses enriched with public-domain
+  Devanagari + transliteration. Cosine top-k grounds every answer in real, cited verses.
+- **Models:** Groq `llama-3.3-70b` (primary) with Gemini `gemini-2.5-flash` as fallback.
+
+## Evals
+A small suite measures whether RAG actually stops fabricated citations
+([`evals/`](evals/), `python evals/run_eval.py`):
+
+| Metric (18 questions) | Naive wrapper | RAG (this app) |
+|---|---|---|
+| Fabricated citations | 7% | **0%** |
+| Citations grounded in a shown verse | n/a | **100%** |
+
+Every citation this app makes is grounded in a real verse retrieved and shown to the user;
+a naive wrapper cites from memory — unverifiable, and 7% point to verses that don't exist.
 
 ## Run locally
 ```bash
@@ -56,6 +76,7 @@ Free, no credit card — see **[DEPLOY.md](DEPLOY.md)** (Hugging Face Spaces). T
 ## Rebuild the knowledge base
 ```bash
 python scripts/build_corpus.py   # fetch + normalize the 17-chapter corpus
+python scripts/add_sanskrit.py   # add Devanagari + IAST to the aligned chapters
 python scripts/ingest.py         # embed verses -> corpus/embeddings.json (resumable)
 ```
 

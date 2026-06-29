@@ -33,16 +33,11 @@ class ProviderUnavailable(Exception):
 
 
 def build_chain() -> list[dict]:
-    """Build the ordered provider chain from whatever keys are present (read fresh each call)."""
-    chain: list[dict] = []
+    """Build the ordered provider chain from whatever keys are present (read fresh each call).
 
-    gem = os.getenv("GEMINI_API_KEY", "").strip()
-    if gem:
-        primary = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
-        chain.append({"name": f"gemini:{primary}", "type": "gemini", "key": gem, "model": primary})
-        # A second Gemini model (separate daily quota) before leaving the provider.
-        if "2.0-flash" not in primary:
-            chain.append({"name": "gemini:2.0-flash", "type": "gemini", "key": gem, "model": "gemini-2.0-flash"})
+    Priority: Groq first (fast + generous free tier), then Gemini as fallback, then the rest.
+    """
+    chain: list[dict] = []
 
     groq = os.getenv("GROQ_API_KEY", "").strip()
     if groq:
@@ -51,6 +46,14 @@ def build_chain() -> list[dict]:
             "base_url": "https://api.groq.com/openai/v1",
             "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
         })
+
+    gem = os.getenv("GEMINI_API_KEY", "").strip()
+    if gem:
+        primary = os.getenv("GEMINI_MODEL", "gemini-2.5-flash").strip()
+        chain.append({"name": f"gemini:{primary}", "type": "gemini", "key": gem, "model": primary})
+        # A second Gemini model (separate daily quota) before leaving the provider.
+        if "2.0-flash" not in primary:
+            chain.append({"name": "gemini:2.0-flash", "type": "gemini", "key": gem, "model": "gemini-2.0-flash"})
 
     oro = os.getenv("OPENROUTER_API_KEY", "").strip()
     if oro:

@@ -94,6 +94,12 @@ def _check_rate_limit(ip: str) -> None:
     window.append(now)
 
 
+def _client_ip(request: Request) -> str:
+    # Behind a host's proxy (Render/HF), the real client IP is in X-Forwarded-For.
+    fwd = request.headers.get("x-forwarded-for", "")
+    return fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "unknown")
+
+
 class Message(BaseModel):
     role: str  # "user" or "model"
     text: str
@@ -101,6 +107,10 @@ class Message(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: list[Message]
+
+
+class VerifyRequest(BaseModel):
+    quote: str
 
 
 def _grounding_block(sources: list[dict]) -> str:
@@ -125,10 +135,7 @@ async def chat(req: ChatRequest, request: Request):
             status_code=500,
             detail="No AI provider keys set. Copy .env.example to .env and add at least GEMINI_API_KEY.",
         )
-    # Behind a host's proxy (Render/HF), the real client IP is in X-Forwarded-For.
-    fwd = request.headers.get("x-forwarded-for", "")
-    client_ip = fwd.split(",")[0].strip() if fwd else (request.client.host if request.client else "unknown")
-    _check_rate_limit(client_ip)
+    _check_rate_limit(_client_ip(request))
     if not req.messages:
         raise HTTPException(status_code=400, detail="No messages provided.")
 
@@ -150,6 +157,33 @@ async def chat(req: ChatRequest, request: Request):
     return StreamingResponse(generate(), media_type="text/plain; charset=utf-8")
 
 
+@app.post("/api/verify")
+async def verify_quote(req: VerifyRequest, request: Request):
+    """Quote Myth-Buster: check a claimed 'Chanakya quote' against the real corpus.
+
+    Pure retrieval/similarity — no LLM — so the verdict is objective and explainable:
+    we show the nearest real verse and how closely it matches.
+    """
+    _check_rate_limit(_client_ip(request))
+    quote = (req.quote or "").strip()
+    if not quote:
+        raise HTTPException(status_code=400, detail="No quote provided.")
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Verifier needs the embedding key; try again later.")
+
+    matches = await retrieve(quote, GEMINI_API_KEY, k=3, min_score=0.0)
+    top = matches[0]["score"] if matches else 0.0
+
+    if top >= 0.86:
+        verdict, message = "AUTHENTIC", "This closely matches a real verse in the Chanakya Niti."
+    elif top >= 0.70:
+        verdict, message = "PARAPHRASED", "The idea exists in the Chanakya Niti, but this wording is a paraphrase — here is the closest real verse."
+    else:
+        verdict, message = "NOT FOUND", "No close match in the Chanakya Niti corpus. This is likely misattributed or invented (a lot of viral 'Chanakya quotes' are)."
+
+    return {"verdict": verdict, "confidence": round(top, 3), "message": message, "nearest": matches}
+
+
 @app.get("/health")
 def health():
     return {
@@ -163,7 +197,8 @@ def health():
 # --- serve the frontend (static files at repo root) -----------------------
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(ROOT_DIR, "index.html"))
+    # Serve the app directly (no forced splash delay).
+    return FileResponse(os.path.join(ROOT_DIR, "Chanakya.html"))
 
 
 # Mount everything else (Chanakya.html, script.js, style.css, images, favicon/)

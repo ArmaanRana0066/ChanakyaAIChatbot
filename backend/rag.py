@@ -15,6 +15,7 @@ import numpy as np
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EMB_FILE = os.path.join(ROOT, "corpus", "embeddings.json")
+CORPUS_FILE = os.path.join(ROOT, "corpus", "chanakya_niti.json")
 EMBED_MODEL = "gemini-embedding-001"
 
 
@@ -32,6 +33,7 @@ class VectorStore:
         self.items: list[dict] = []
         self.matrix: np.ndarray | None = None
         self.dim = 0
+        self.extra: dict[str, dict] = {}  # id -> {sanskrit, transliteration}
 
     def load(self) -> None:
         if self.ready:
@@ -44,6 +46,15 @@ class VectorStore:
         self.items = data["items"]
         mat = np.array([it["embedding"] for it in self.items], dtype=np.float32)
         self.matrix = _normalize(mat)
+        # Side-load Sanskrit / transliteration (where available) to show in citations.
+        if os.path.exists(CORPUS_FILE):
+            with open(CORPUS_FILE, encoding="utf-8") as f:
+                for c in json.load(f):
+                    if c.get("sanskrit"):
+                        self.extra[c["id"]] = {
+                            "sanskrit": c["sanskrit"],
+                            "transliteration": c.get("transliteration", ""),
+                        }
         self.ready = True
 
     @property
@@ -96,12 +107,15 @@ async def retrieve(query: str, api_key: str, k: int = 4, min_score: float = 0.35
         if score < min_score:
             continue
         it = STORE.items[int(i)]
+        extra = STORE.extra.get(it["id"], {})
         results.append({
             "id": it["id"],
             "citation": it["citation"],
             "chapter": it["chapter"],
             "verse": it["verse"],
             "translation": it["translation"],
+            "sanskrit": extra.get("sanskrit", ""),
+            "transliteration": extra.get("transliteration", ""),
             "score": round(score, 4),
         })
     return results
